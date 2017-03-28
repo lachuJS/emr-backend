@@ -16,7 +16,7 @@ let doctor,healthLog,requiredHealthLog,errHealthLog;
     doctor = {
       id:2,
       name:'doctor_name',
-      bio:'MBBS',
+      info:'MBBS',
       email:'doctor@email.com',
       phone:9876543212,
       password:'default'
@@ -74,6 +74,33 @@ let doctor,healthLog,requiredHealthLog,errHealthLog;
     }
   });
 
+  describe('/info',() => {
+    it('should get info about doctor',(done) => {
+      passportStub.login(doctor);
+      chai
+        .request(app)
+        .get('/doctor/api/info')
+        .end((err, res) => {
+          if(err){ done(err) }
+          res.should.have.status(200);
+          expect(res.body).to.be.a('object');
+          expect(res.body).to.have.property('name');
+          expect(res.body).to.have.property('info');
+          done();
+        });
+    });
+    it('should respond with 401 unauthorized if not logged in',(done) => {
+      passportStub.logout(app);
+      chai
+        .request(app)
+        .get('/doctor/api/info')
+        .end((err, res) => {
+          expect(err).to.be.defined;
+          err.should.have.status(401);
+          done();
+        });
+    });
+  });
   describe('/appointments',() => {
       //specs
       it('should get all appointments of the doctor',(done) => {
@@ -84,6 +111,7 @@ let doctor,healthLog,requiredHealthLog,errHealthLog;
           .end((err,res) => {
             if(err) { done(err) }
             expect(res.body).to.be.a('array');
+            expect(res.body[0]).to.have.all.keys('aid','name','hid','gender','dob','location','dateTimeCreated');
             done();
           });
       });
@@ -153,7 +181,7 @@ let doctor,healthLog,requiredHealthLog,errHealthLog;
           res.should.have.status(200);
           expect(res.body).to.be.a('array');
           expect(res.body[0]).to.have.all.keys('examination','pr','bp','rr','temp','cvs','cns','rs','pa','le','followUp',
-          'prescription','chiefComplaints','finalDiagnosis');
+          'prescription','chiefComplaints','finalDiagnosis','dateTimeCreated');
           expect(res.body[0].prescription).to.be.a('array');
           expect(res.body[0].chiefComplaints).to.be.a('array');
           expect(res.body[0].finalDiagnosis).to.be.a('array');

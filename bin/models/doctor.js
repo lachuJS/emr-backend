@@ -5,7 +5,7 @@ var
   //auth
   //passport strategies
   doctor.findByPhone = (username, password, done) => {
-    pool.query(`select id,name,bio from doctor where phone="${username}" and password="${password}"`,(err,rows) => {
+    pool.query(`select id,name,info from doctor where phone="${username}" and password="${password}"`,(err,rows) => {
       //mysql errors
       if(err){
         done(err);
@@ -28,7 +28,6 @@ var
         done(null,false,{message:'invalid session.'});
       }
       else{
-        console.log(rows[0]);
         done(null,rows[0]);
       }
     });
@@ -36,8 +35,8 @@ var
 
 //api
 doctor.getAppointments = (id,done) => {
-  pool.query(`select appointment.id as aid,patient.name,patient.id as hid,patient.gender,patient.dob,appointment.follow_up as followUp
-    from appointment join patient on appointment.hid = patient.id where appointment.completed = false and appointment.did = ${id}`,(err, appointments) => {
+  pool.query(`select appointment.id as aid,patient.name,patient.id as hid,patient.gender,patient.dob,patient.location,appointment.datetime_created as
+    dateTimeCreated from appointment join patient on appointment.hid = patient.id where appointment.datetime_completed is null and appointment.did = ${id}`,(err, appointments) => {
     if(err){
       done(err);
     }
@@ -49,7 +48,7 @@ doctor.getPatientHistory = (patientId,doctorId,done) => {
   pool.getConnection((err, connection) => {
     if(err){ return done(err) }
     //check if pending appointment exists between doctor and patient
-    connection.query(`select id from appointment where hid=${patientId} and did="${doctorId}" and completed=false`,(err,rows) => {
+    connection.query(`select id from appointment where hid=${patientId} and did="${doctorId}" and datetime_completed is null`,(err,rows) => {
       if(err) { return done(err) }
       else if(rows.length == 0) { return done(null,false) }
       else{
@@ -79,7 +78,7 @@ doctor.getPatientHealthlogs = (appointmentId, doctorId, done) => {
       }
       else{ //doctor owns the appointment
         pool.query(`SELECT healthlog.examination, healthlog.pr, healthlog.bp, healthlog.rr, healthlog.temp, healthlog.cvs,healthlog.cns,
-          healthlog.rs, healthlog.pa, healthlog.le, healthlog.follow_up as followUp, healthlog.prescription,chief_complaints. chiefComplaints,
+          healthlog.rs, healthlog.pa, healthlog.le, healthlog.follow_up as followUp,healthlog.datetime_created as dateTimeCreated,healthlog.prescription,chief_complaints. chiefComplaints,
           Diagnosis. finalDiagnosis FROM(SELECT healthlog.*,GROUP_CONCAT(drugs.name SEPARATOR ',') as prescription
           FROM healthlog LEFT OUTER JOIN prescription ON (healthlog.id = prescription.healthlog_id)
           LEFT OUTER JOIN drugs ON (prescription.drug_id= drugs.id) GROUP BY healthlog.id) as healthlog,
@@ -113,7 +112,7 @@ doctor.postPatientHealthLog = (healthLog, done) => {
       healthLog.followUp = healthLog.followUp ? `"${healthLog.followUp}"` : null;
       connection.query(`insert into healthlog values(null,${healthLog.aid},"${healthLog.examination}",${healthLog.pr},
         ${healthLog.bp},${healthLog.rr},${healthLog.temp},${healthLog.cvs},${healthLog.cns},${healthLog.rs},${healthLog.pa},
-        "${healthLog.le}",${healthLog.followUp})`,(err, result) => {
+        "${healthLog.le}",${healthLog.followUp},default)`,(err, result) => {
           if(err){
             done(err);
           }

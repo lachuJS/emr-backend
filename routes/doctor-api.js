@@ -7,6 +7,16 @@ var doctor = require('../bin/models/doctor');
 
 var validate = require('../bin/validate');
 
+router.get('/info',function(req, res, next) {
+  if(req.user){
+    res.json(req.user);
+  }
+  else{
+    err = new Error('Unauthorized');
+    err.status = 401;
+    next(err);
+  }
+});
 router.get('/appointments', function(req, res, next) {
   if(req.user) { //sessions exist
     doctor.getAppointments(req.user.id,(err, appointments) => {

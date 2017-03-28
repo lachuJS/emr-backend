@@ -17,7 +17,7 @@ describe('doctor auth',() => {
   });
 
   describe('/doctor/auth/login',() => {
-    it('should respond with set-cookie healder',(done) => {
+    it('should respond with set-cookie header',(done) => {
       chai
         .request(app)
         .post('/doctor/auth/login')
@@ -28,7 +28,7 @@ describe('doctor auth',() => {
           else{
             expect(res).to.have.cookie('_healthiswealth_<3');
             res.should.have.status(200);
-            expect(res.body).to.have.all.keys('name','bio');
+            expect(res.body).to.have.all.keys('name','info');
             done();
           }
         });
